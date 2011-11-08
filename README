@@ -1,0 +1,8 @@
+PIE UPWARD BOUND EVENT SONAR STATION CODE
+
+Code for a cool sonar activity to get kids excited about STEM.
+
+Arduino code is under the "Demo" Folder.
+Python code in "demo.py"
+   - Requires pygame, pyserial
+
