@@ -111,20 +111,20 @@ def clearscreen():
     global currentbuffer
     global buffers
     if recordstate == 1:
-        if current_buffer == 0:
+        if currentbuffer == 0:
             recordstate = 0
-            current_message = "Cannot save to buffer 0" #cannot save to buffer 0
-            break
-        recordstate = 2
-        current_message = "Recording"
-        savebuffer = []
+            current_message = "Specify Bufr!" #cannot save to buffer 0
+        else:
+            recordstate = 2
+            current_message = "Recording"
+            savebuffer = []
     elif recordstate == 2:
         recordstate = 0
-        if current_buffer == 0:
-            current_message = "Cannot save to buffer 0" #cannot save to buffer 0
-            break
-        buffers[currentbuffer] = savebuffer
-        current_message = "Stored as " + str(currentbuffer)
+        if currentbuffer == 0:
+            current_message = "Specify Bufr!" #cannot save to buffer 0
+        else:
+            buffers[currentbuffer] = savebuffer
+            current_message = "Stored as " + str(currentbuffer)
     screen.fill([0,0,0])
     if currentbuffer != 0:
         drawbuffer(currentbuffer)
