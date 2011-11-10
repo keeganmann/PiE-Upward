@@ -111,11 +111,18 @@ def clearscreen():
     global currentbuffer
     global buffers
     if recordstate == 1:
+        if current_buffer == 0:
+            recordstate = 0
+            current_message = "Cannot save to buffer 0" #cannot save to buffer 0
+            break
         recordstate = 2
         current_message = "Recording"
         savebuffer = []
     elif recordstate == 2:
         recordstate = 0
+        if current_buffer == 0:
+            current_message = "Cannot save to buffer 0" #cannot save to buffer 0
+            break
         buffers[currentbuffer] = savebuffer
         current_message = "Stored as " + str(currentbuffer)
     screen.fill([0,0,0])
@@ -153,6 +160,8 @@ while not done:
             if( event.key == pygame.K_x or event.key == pygame.K_ESCAPE ):
                 done = True
             if( event.key == pygame.K_b):
+                if recordstate == 2:
+                    break #don't change buffers while recording
                 currentbuffer = (currentbuffer + 1) % 4
                 if currentbuffer == 0:
                     current_message = "No buffer"
