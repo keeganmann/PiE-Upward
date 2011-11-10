@@ -3,19 +3,39 @@ import serial.tools.list_ports
 import pygame
 from math import sqrt
 
-"""BASIC SETTINGS"""
+"""*** BASIC SETTINGS ***"""
+#display dimensions
 width = 800
 height = 600
+
+#Not used
 sample_period = 10
+
+#number of times the screen should be divided
 sensor_count = 4
+
+#how fast the graph moves across the screen
 step_size = 3
+
+#display fullscreen?
 fullscreen = False
+
+#scales the distance
 scale_factor = 0.7
+
+#scales the velocity
 deriv_scale = 20
+
+#Filtering constant for velocity graph (between 0 and 1)
 lowpass = 0.5
+
+#name of the serial port associated with the Arduino
 port_name = "/dev/tty.usbserial-A900cehS"
 
-"""END OF BASIC SETTINGS"""
+#the number of buffers
+max_buffers = 4
+
+"""*** END OF BASIC SETTINGS ***"""
 
 pygame.init()
 
@@ -62,10 +82,13 @@ font = pygame.font.Font(pygame.font.get_default_font(), 15)
 
 colors = [[255, 0, 0], [0, 255, 0], [70, 70, 255], [255, 255, 0], [0, 255, 255], [255, 0, 255]]
 
+#message to display in center
 current_message = "PIONEERS"
+#state of the recording 0=normal, 1=ready to record, 2=recording
 recordstate = 0
 
 def update_values(array):
+    """Fetches values from the arduino and puts them in the passed array"""
     val = ser.readline()
     i = 0
     #print "----"
@@ -80,6 +103,7 @@ def update_values(array):
         i += 1
 
 def differentiate(inarray1, inarray2, outarray, tmInt, pderivatives):
+    """Takes the derivative and smooths the result"""
     for i in range(0, len(inarray1)):
         #differentiate
         outarray[i] = (inarray2[i] - inarray1[i]) * deriv_scale
@@ -87,13 +111,14 @@ def differentiate(inarray1, inarray2, outarray, tmInt, pderivatives):
         outarray[i] = outarray[i] * (1 - lowpass) + pderivatives[i] * (lowpass)
 
 def message(mymessage):
+    """Displays the message passed in the center of the screen"""
     screen.fill([0, 0, 0], [width/2-50, height/2-10, 100, 20])
     pygame.draw.rect(screen, [100, 100, 100], [width/2-50, height/2-10, 100, 20], 2)
     text = font.render(mymessage, True, [100, 100, 100])
     screen.blit(text, [width/2-text.get_width()/2, height/2-text.get_height()/2+2])
 
 def axes():
-    #draw axes
+    """draw borders and divisions on the screen"""
     for i in range(0, div_hor):
         pygame.draw.line(screen,[127,127,127], [width//div_hor*i,0],[width//div_hor*i,height],5)
     for i in range(0, div_vert):
@@ -102,6 +127,7 @@ def axes():
     message(current_message)
 
 def drawbuffer(num):
+    """Draws the current reference buffer"""
     global current_message
     if not num in buffers.keys():
         return
@@ -115,6 +141,10 @@ def drawbuffer(num):
                              3)
 
 def clearscreen():
+    """
+    Clears the screen.  Calls many necessary helper funcitons to draw the 
+    necessary elements
+    """
     global recordstate
     global current_message
     global savebuffer
@@ -141,18 +171,25 @@ def clearscreen():
     axes();
 
 def clip(val, small=0.0, big=1.0):
+    """Clips a value, val to between small and big"""
     return max(small, min(big, val))
 
-
+#Temporary buffer for data to save
 savebuffer = []
+#The current buffer to display/save data to
 currentbuffer = 1
+#Reference buffers data is saved to
 buffers = {}
+#set to true causes exit
 done = False
+#position across the screen
 count = 0
+#buffers used to store the necessary sensor data for one frame
 vals =   [0 for _ in range(0, sensor_count)]
 pvals =  [0 for _ in range(0, sensor_count)]
 pdvals = [0 for _ in range(0, sensor_count)]
 dvals =  [0 for _ in range(0, sensor_count)]
+#clear the screen before we begin
 clearscreen()
 print("")
 print("Started Successfully!")
@@ -172,7 +209,7 @@ while not done:
             if( event.key == pygame.K_b):
                 if recordstate == 2:
                     break #don't change buffers while recording
-                currentbuffer = (currentbuffer + 1) % 4
+                currentbuffer = (currentbuffer + 1) % max_buffers
                 if currentbuffer == 0:
                     current_message = "No buffer"
                 else:
@@ -211,10 +248,12 @@ while not done:
                          [          count*step_size+port_width*x,clip( vals[i])*port_height+div_height*y], 
                          3)
 
-        
+    #if recording, save to the savebuffer
     if recordstate == 2:
         savebuffer.append(vals[0])
 
+    #draw axes on top every time
     axes()
+    #refresh the screen
     pygame.display.flip()
     
