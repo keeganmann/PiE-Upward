@@ -13,8 +13,11 @@ width = 800
 height = 600
 sample_period = 10
 sensor_count = 4
-step_size = 1
+step_size = 3
 fullscreen = False
+scale_factor = 0.7
+deriv_scale = 20
+lowpass = 0.5
 port_name = "/dev/tty.usbserial-A900cehS"
 
 """END OF BASIC SETTINGS"""
@@ -40,7 +43,7 @@ div_hor = int(sqrt(sensor_count)+0.5)
 div_vert = int(sqrt(sensor_count))
 port_width = width//div_hor
 div_height = height//div_vert
-port_height = height//div_vert-20
+port_height = height//div_vert
 print("Screen divided : ", div_hor, "x", div_vert)
 
 
@@ -61,14 +64,17 @@ def update_values(array):
             break
         try:
             #print int(item)
-            array[i] = int(item)/1024.0
+            array[i] = int(item)/1024.0*scale_factor
         except BaseException as _:
             print("Could not parse string")
         i += 1
 
-def differentiate(inarray1, inarray2, outarray, tmInt):
+def differentiate(inarray1, inarray2, outarray, tmInt, pderivatives):
     for i in range(0, len(inarray1)):
-        outarray[i] = (inarray2[i] - inarray1[i])
+        #differentiate
+        outarray[i] = (inarray2[i] - inarray1[i]) * deriv_scale
+        #smooth
+        outarray[i] = outarray[i] * (1 - lowpass) + pderivatives[i] * (lowpass)
 
 def message(mymessage):
     screen.fill([0, 0, 0], [width/2-50, height/2-10, 100, 20])
@@ -85,21 +91,47 @@ def axes():
         pygame.draw.line(screen,[100,100,100], [0,height//div_vert*(i+0.5)],[width,height//div_vert*(i+0.5)],1)
     message(current_message)
 
+def drawbuffer(num):
+    global current_message
+    if not num in buffers.keys():
+        return
+    for i in range(1, len(buffers[num])):
+        for sensornumber in range(0, sensor_count):
+            x = sensornumber % div_hor
+            y = sensornumber // div_hor
+            pygame.draw.line(screen,[80,80,80], 
+                             [(i-1)*step_size+port_width*x,clip(buffers[num][i-1])*port_height+div_height*y], 
+                             [i*step_size+port_width*x,clip(buffers[num][i])*port_height+div_height*y], 
+                             3)
+
 def clearscreen():
     global recordstate
     global current_message
+    global savebuffer
+    global currentbuffer
+    global buffers
     if recordstate == 1:
         recordstate = 2
         current_message = "Recording"
+        savebuffer = []
     elif recordstate == 2:
         recordstate = 0
-        current_message = "Stored Temp"
+        buffers[currentbuffer] = savebuffer
+        current_message = "Stored as " + str(currentbuffer)
     screen.fill([0,0,0])
+    if currentbuffer != 0:
+        drawbuffer(currentbuffer)
     axes();
+
+def clip(val, small=0.0, big=1.0):
+    return max(small, min(big, val))
 
 
 print("Started")
 
+savebuffer = []
+currentbuffer = 1
+buffers = {}
 done = False
 count = 0
 vals =   [0 for _ in range(0, sensor_count)]
@@ -120,6 +152,13 @@ while not done:
                 current_message = "READY"
             if( event.key == pygame.K_x or event.key == pygame.K_ESCAPE ):
                 done = True
+            if( event.key == pygame.K_b):
+                currentbuffer = (currentbuffer + 1) % 4
+                if currentbuffer == 0:
+                    current_message = "No buffer"
+                else:
+                    current_message = "Buffer " + str(currentbuffer)
+                
             
     #increment iteration counter
     count = count + 1
@@ -134,7 +173,7 @@ while not done:
     pvals, vals = vals, pvals
     #read values
     update_values(vals)
-    differentiate(pvals, vals, dvals, sample_period)
+    differentiate(pvals, vals, dvals, sample_period, pdvals)
 
     #draw traces
     for i in range(0, sensor_count):
@@ -142,12 +181,21 @@ while not done:
         y = i // div_hor
 
 
-        pygame.draw.line(screen,list(map(lambda x: x/2, colors[i])), [max(count-1, 0)*step_size+port_width*x,pdvals[i]*port_height+div_height*(y+0.5)], [count*step_size+port_width*x, dvals[i]*port_height+div_height*(y+0.5)], 3)
+        pygame.draw.line(screen,list(map(lambda x: x/2, colors[i])), 
+                         [max(count-1, 0)*step_size+port_width*x,clip(pdvals[i],-0.5,0.5)*port_height+div_height*(y+0.5)], 
+                         [          count*step_size+port_width*x,clip( dvals[i],-0.5,0.5)*port_height+div_height*(y+0.5)], 
+                         3)
 
 
-        pygame.draw.line(screen,colors[i], [max(count-1, 0)*step_size+port_width*x,pvals[i]*port_height+div_height*y], [count*step_size+port_width*x, vals[i]*port_height+div_height*y], 3)
+        pygame.draw.line(screen,colors[i], 
+                         [max(count-1, 0)*step_size+port_width*x,clip(pvals[i])*port_height+div_height*y], 
+                         [          count*step_size+port_width*x,clip( vals[i])*port_height+div_height*y], 
+                         3)
 
         
+    if recordstate == 2:
+        savebuffer.append(vals[0])
+
     axes()
     pygame.display.flip()
     
