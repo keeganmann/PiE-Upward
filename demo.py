@@ -1,12 +1,7 @@
 from serial import Serial
+import serial.tools.list_ports
 import pygame
 from math import sqrt
-
-"""
-TODO:
- - Replication Stats
- - Labels
-"""
 
 """BASIC SETTINGS"""
 width = 800
@@ -25,11 +20,26 @@ port_name = "/dev/tty.usbserial-A900cehS"
 pygame.init()
 
 #Setup Serial Port
-print("Initializing Serial Port: ", (port_name))
-ser = Serial(port_name)
+print("Available Serial Ports:")
+serial.tools.list_ports.main()
+print("")
+print("Initializing Serial Port: " + str(port_name))
+try:
+    ser = Serial(port_name)
+except BaseException as e:
+    print(e)
+    print("====================================================")
+    print("Failed to Initialize Serial Port")
+    print("Make sure the Arduino is connected")
+    print("If you have not already, edit the port_name = ... line in this python file")
+    print("On windows it should be set to something like COM#")
+    print("On UNIX/Linux/Mac, it should be set to something like /dev/tty...")
+    print("See the list of serial ports printed above under 'Available Serial Ports'.")
+    exit()
 
 #initialize screen
-print("Using", width, "x", height)
+print("")
+print("Using resolution: " + str(width) + "x" + str(height) )
 if fullscreen:
     flags = pygame.FULLSCREEN
 else:
@@ -44,7 +54,7 @@ div_vert = int(sqrt(sensor_count))
 port_width = width//div_hor
 div_height = height//div_vert
 port_height = height//div_vert
-print("Screen divided : ", div_hor, "x", div_vert)
+print("Screen divided: " + str(div_hor) + "x" + str(div_vert) )
 
 
 #Setup font
@@ -66,7 +76,7 @@ def update_values(array):
             #print int(item)
             array[i] = int(item)/1024.0*scale_factor
         except BaseException as _:
-            print("Could not parse string")
+            print("Warning: Could not parse string")
         i += 1
 
 def differentiate(inarray1, inarray2, outarray, tmInt, pderivatives):
@@ -134,8 +144,6 @@ def clip(val, small=0.0, big=1.0):
     return max(small, min(big, val))
 
 
-print("Started")
-
 savebuffer = []
 currentbuffer = 1
 buffers = {}
@@ -146,6 +154,8 @@ pvals =  [0 for _ in range(0, sensor_count)]
 pdvals = [0 for _ in range(0, sensor_count)]
 dvals =  [0 for _ in range(0, sensor_count)]
 clearscreen()
+print("")
+print("Started Successfully!")
 while not done:
     #check events
     for event in pygame.event.get():
