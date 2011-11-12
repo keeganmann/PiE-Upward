@@ -88,6 +88,15 @@ current_message = "PIONEERS"
 #state of the recording 0=normal, 1=ready to record, 2=recording
 recordstate = 0
 
+pong = False
+
+ballv = 0
+
+b1p = [100,100]
+b1v = [1,0]
+b2p = [100,100]
+b2v = [1,0]
+
 def update_values(array):
     """Fetches values from the arduino and puts them in the passed array"""
     val = ser.readline()
@@ -215,7 +224,9 @@ while not done:
                     current_message = "No buffer"
                 else:
                     current_message = "Buffer " + str(currentbuffer)
-                
+            if( event.key == pygame.K_p ):
+                pong = not pong
+    
             
     #increment iteration counter
     count = count + 1
@@ -255,6 +266,44 @@ while not done:
 
     #draw axes on top every time
     axes()
+
+    
+    if pong:
+        #screen.fill([0,0,0], [0,0,10,height])
+        #screen.fill([0,0,0], [width-10,0,width,height])
+        screen.fill([0,0,0], [0,0,width,height])
+
+        ul_top = clip(vals[0])*div_height - 20
+        ul_btm = clip(vals[0])*div_height  + 20
+        ur_top = clip(vals[1])*div_height  - 20
+        ur_btm = clip(vals[1])*div_height  + 20
+        bl_top = clip(vals[2])*div_height  - 20
+        bl_btm = clip(vals[2])*div_height + 20
+        br_top = clip(vals[3])*div_height - 20
+        br_btm = clip(vals[3])*div_height + 20
+        screen.fill([255, 255, 255], [0,ul_top,10,40])
+        screen.fill([255, 255, 255], [width-10,ur_top,10,40])
+        screen.fill([255, 255, 255], [0,bl_top+div_height,10,40])
+        screen.fill([255, 255, 255], [width-10,br_top+div_height,10,40])
+        
+        screen.fill([255,255,255], b1p + [10,10])
+        #screen.fill([255,255,255], b2p + [10,10])
+        if 1:
+            b1p[0] += b1v[0]
+            b1p[1] += b1v[1]
+            b2p[0] += b2v[0]
+            b2p[1] += b2v[1]
+            if b1p[0] < 0 or b1p[0] > width:
+                reset_ball()
+            if b1p[1] < 0:
+                p1p[1] = 0
+                b1v *= -1
+            if b1p[1] > height:
+                p1p[1] = height
+                b1v *= -1
+        
+        
     #refresh the screen
     pygame.display.flip()
+
     
