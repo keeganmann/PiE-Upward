@@ -15,22 +15,23 @@ sample_period = 10
 sensor_count = 4
 
 #how fast the graph moves across the screen
-step_size = 3
+step_size = 1
 
 #display fullscreen?
 fullscreen = False
 
 #scales the distance
-scale_factor = 0.7
+scale_factor = 12
 
 #scales the velocity
 deriv_scale = 20
 
 #Filtering constant for velocity graph (between 0 and 1)
-lowpass = 0.5
+lowpass = 0.7
 
 #name of the serial port associated with the Arduino
 port_name = "/dev/tty.usbserial-A900cehS"
+#I think it was COM4 or something for Sahar
 
 #the number of buffers
 max_buffers = 4
@@ -237,12 +238,12 @@ while not done:
         y = i // div_hor
 
 
-        pygame.draw.line(screen,list(map(lambda x: x/2, colors[i])), 
+        pygame.draw.line(screen,list(map(lambda x: x/10, colors[i])), 
                          [max(count-1, 0)*step_size+port_width*x,clip(pdvals[i],-0.5,0.5)*port_height+div_height*(y+0.5)], 
                          [          count*step_size+port_width*x,clip( dvals[i],-0.5,0.5)*port_height+div_height*(y+0.5)], 
                          3)
 
-
+        
         pygame.draw.line(screen,colors[i], 
                          [max(count-1, 0)*step_size+port_width*x,clip(pvals[i])*port_height+div_height*y], 
                          [          count*step_size+port_width*x,clip( vals[i])*port_height+div_height*y], 
