@@ -2,6 +2,7 @@ from serial import Serial
 import serial.tools.list_ports
 import pygame
 from math import sqrt
+from random import random
 
 """*** BASIC SETTINGS ***"""
 #display dimensions
@@ -90,12 +91,21 @@ recordstate = 0
 
 pong = False
 
-ballv = 0
+ballv = 10
+
+def reset_ball():
+    global b1p
+    global b1v
+    b1p = [100,100]
+    rnd = random() * ballv
+    b1v = [rnd, ballv - rnd]
 
 b1p = [100,100]
 b1v = [1,0]
 b2p = [100,100]
 b2v = [1,0]
+
+reset_ball()
 
 def update_values(array):
     """Fetches values from the arduino and puts them in the passed array"""
@@ -288,18 +298,18 @@ while not done:
         
         screen.fill([255,255,255], b1p + [10,10])
         #screen.fill([255,255,255], b2p + [10,10])
+        print b1p
+        print b1v
         if 1:
-            b1p[0] += b1v[0]
-            b1p[1] += b1v[1]
-            b2p[0] += b2v[0]
-            b2p[1] += b2v[1]
+            b1p[0] = b1p[0] + b1v[0]
+            b1p[1] = b1p[1] + b1v[1]
             if b1p[0] < 0 or b1p[0] > width:
                 reset_ball()
             if b1p[1] < 0:
-                p1p[1] = 0
+                b1p[1] = 0
                 b1v *= -1
             if b1p[1] > height:
-                p1p[1] = height
+                b1p[1] = height
                 b1v *= -1
         
         
