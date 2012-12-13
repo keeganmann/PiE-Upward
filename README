@@ -6,3 +6,4 @@ Arduino code is under the "Demo" Folder.
 Python code in "demo.py"
    - Requires pygame, pyserial
 
+This was hacked together in a few nights and should be viewed as a work in progress.
